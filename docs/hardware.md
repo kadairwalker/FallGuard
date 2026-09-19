@@ -20,5 +20,12 @@
 
 
 ## Execution
+- Connect accelerometer and buzzer to Raspberry Pi
+- Run the Python fall-detection program
+- Continuously monitor movement
+- Detect possible falls using acceleration thresholds
+- Confirm fall using impact and stillness
+- Activate buzzer when a fall is confirmed
+- Test with simulated falls and normal movements
 
 
