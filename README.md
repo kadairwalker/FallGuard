@@ -13,7 +13,7 @@ Fall-risk individuals - elderly people, those with mobility impairments - often 
 ## Demo
 * **Live Companion App:** https://fallguard-demo.web.app
 
-* **Pitch Deck:** [View our SteelHacks Presentation](Docs/SteelHacks%202026%20-%20FallGuard%20Presentation%20.pdf)
+* **Pitch Deck:** [View our SteelHacks Presentation](https://github.com/kadairwalker/FallGuard/blob/main/docs/SteelHacks%202026%20-%20FallGuard%20Presentation%20.pdf)
 
 ## What it does
 
