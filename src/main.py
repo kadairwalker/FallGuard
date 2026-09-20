@@ -8,9 +8,6 @@ SAMPLE_RATE_HZ = 50
 # False keeps using fake data, for continued testing.
 USE_REAL_SENSOR = True
 
-if USE_REAL_SENSOR:
-    from hardware.i2c_reader import init_accelerometer, read_accelerometer
-
 
 if USE_REAL_SENSOR:
     from hardware.i2c_reader import init_accelerometer, read_accelerometer
