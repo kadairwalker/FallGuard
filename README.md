@@ -20,15 +20,15 @@ A wearable accelerometer streams motion data into a Raspberry Pi in real time. D
 ## How it works
 
 1. **Sensor** - 3-axis accelerometer (I2C), worn on the body
-2. **Read loop** - Raspberry Pi (Python) polls accceleration at ~50Hz
+2. **Read loop** - Raspberry Pi (Python) polls acceleration at ~50Hz
 3. **Detection** - a state machine (or classical ML classifier) looks for freefall -> impact -> stillness
 4. **Alert** - buzzer fires on confirmed fall
 
-No LLM is used anywhere in this pipeline. Detection is classical signal processing / classical ML - a rule-based 
+No LLM is used anywhere in this pipeline. Detection is classical signal processing / classical ML - a rule-based state machine.
 
 ## Why waist, not wrist
 
-We chose waist placement over a wrist-worn design deliberately. Wrist-worn accelerometers pick up a lot of normal arm movement - waiving, reaching, bumping a hand against something - that can produce sharp acceleration spikes resembling a fall's impact signature, leading to false positives. The waist sits close to the body's center of mas, so it moves with overall body motion rather than swinging independetnly, which makes our threshold-based detection far more reliable without needing complex motion-filtering logic.
+We chose waist placement over a wrist-worn design deliberately. Wrist-worn accelerometers pick up a lot of normal arm movement - waving, reaching, bumping a hand against something - that can produce sharp acceleration spikes resembling a fall's impact signature, leading to false positives. The waist sits close to the body's center of mass, so it moves with overall body motion rather than swinging independently, which makes our threshold-based detection far more reliable without needing complex motion-filtering logic.
 
 ## Team
 
@@ -41,7 +41,9 @@ We chose waist placement over a wrist-worn design deliberately. Wrist-worn accel
 
 - Python
 - Raspberry Pi
-- [Accelerometer model]
+- Grove 3-Axis Digital Accelerometer (MMA7660)
+- Firebase Hosting
+- HTML/Progressive Web App (PWA)
 
 ## Status
 Built in 24 hours at SteelHacks.
