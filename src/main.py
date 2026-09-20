@@ -12,12 +12,13 @@ if USE_REAL_SENSOR:
     from hardware.i2c_reader import init_accelerometer, read_accelerometer
 
 
-def trigger_buzzer():
-    """
-    STAND-IN for the real GPIO call.
-    Person 3's buzzer code replaces this with the actual pin trigger.
-    """
-    print("    >>> BUZZER ON <<<")
+if USE_REAL_SENSOR:
+    from hardware.i2c_reader import init_accelerometer, read_accelerometer
+    from hardware.buzzer import trigger_buzzer
+else:
+    def trigger_buzzer():
+        """STAND-IN for fake-data testing -- the real GPIO version is imported above instead."""
+        print("    >>> BUZZER ON <<<")
 
 
 def fake_sensor_stream():
