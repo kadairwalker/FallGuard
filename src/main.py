@@ -8,7 +8,7 @@ SAMPLE_RATE_HZ = 50
  
 # Set this to True once you're actually on the Pi with the sensor wired up.
 # False keeps using fake data, for continued testing on a laptop.
-USE_REAL_SENSOR = False
+USE_REAL_SENSOR = True
  
 if USE_REAL_SENSOR:
     from hardware.i2c_reader import init_accelerometer, read_accelerometer
