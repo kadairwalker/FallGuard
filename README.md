@@ -13,6 +13,8 @@ Fall-risk individuals - elderly people, those with mobility impairments - often 
 ## Demo
 * **Live Companion App:** https://fallguard-demo.web.app
 
+* **Pitch Deck:** [View our SteelHacks Presentation](Docs/SteelHacks%202026%20-%20FallGuard%20Presentation%20.pdf)
+
 ## What it does
 
 A wearable accelerometer streams motion data into a Raspberry Pi in real time. Detection logic looks for the distinct two-phase signature of a real fall - a brief freefall (near-zero acceleration) followed by a sharp impact spike and a period of stillness - and distinguishes it from normal movement like sitting down or walking. When a fall is confirmed, it triggers an audible alert. No LLM is used anywhere in this pipeline. Detection is classical signal processing / classical ML - a rule-based state machine.
