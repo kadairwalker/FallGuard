@@ -11,7 +11,6 @@ Fall-risk individuals - elderly people, those with mobility impairments - often 
 **Who pays for this:** Elder care facilities and assisted living operators, who are liable for resident safety and already budget for monitoring systems, are the most realistic first buyer. Secondary buyer: adult children of aging parents living independently, as a lower-cost alternative to traditional medical alert subscriptions.
 
 ## Demo
-* [Subject to change - Link to video/gif of the sensor being dropped and buzzer firing]
 * **Live Companion App:** https://fallguard-demo.web.app
 
 ## What it does
