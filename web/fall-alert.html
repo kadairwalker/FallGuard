@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0E7CB0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FallGuard">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230E7CB0'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='white' font-family='Georgia,serif'%3EF%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230E7CB0'/%3E%3Ctext x='50' y='68' font-size='58' text-anchor='middle' fill='white' font-family='Georgia,serif'%3EF%3C/text%3E%3C/svg%3E">
+<title>FallGuard — Fall Detection & Alerts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2F8FB;
+    --sky:#0E7CB0;
+    --sky-soft:#DFF0F8;
+    --amber:#E8B24B;
+    --amber-soft:#FBEBCB;
+    --amber-ink:#8A5A12;
+    --brick:#B5433B;
+    --brick-soft:#F3DAD7;
+    --slate:#3E5C63;
+    --slate-soft:#E1EBEC;
+    --ink:#2A2A26;
+    --ink-soft:#6B6A63;
+    --card:#FFFFFF;
+    --line:#E2DDCF;
+  }
+  *{box-sizing:border-box;}
+  html{ background:var(--paper); overflow-x:hidden; }
+  body{
+    margin:0;
+    width:100%;
+    max-width:100vw;
+    overflow-x:hidden;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Atkinson Hyperlegible', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    -webkit-tap-highlight-color:transparent;
+    overscroll-behavior-y:contain;
+  }
+  .app{
+    max-width:960px;
+    margin:0 auto;
+    padding:calc(24px + env(safe-area-inset-top)) 24px calc(40px + env(safe-area-inset-bottom));
+  }
+  @media (max-width:480px){
+    .app{ padding-left:16px; padding-right:16px; }
+  }
+
+  /* Header brand lockup — icon doubles as the live status pulse */
+  .hero{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:28px;
+  }
+  .wordmark{
+    font-family:'Plus Jakarta Sans', sans-serif;
+    font-weight:700;
+    font-size:clamp(32px, 8vw, 72px);
+    line-height:1;
+    letter-spacing:-0.01em;
+    color:var(--sky);
+    margin:0;
+    min-width:0;
+  }
+  .status-visual{
+    flex-shrink:0;
+    width:clamp(48px, 12vw, 92px);
+    height:clamp(48px, 12vw, 92px);
+  }
+  @media (max-width:360px){
+    .wordmark{ font-size:28px; }
+    .status-visual{ width:44px; height:44px; }
+  }
+  .pulse-svg{
+    width:100%;
+    height:100%;
+    overflow:visible;
+  }
+  .pulse-core{
+    fill:var(--sky);
+    transition:fill .3s ease;
+  }
+  .pulse-line{
+    transition:stroke .3s ease;
+  }
+  .pulse-ring{
+    fill:none;
+    stroke:var(--sky);
+    stroke-width:2;
+    opacity:0;
+    transform-box:fill-box;
+    transform-origin:center;
+    animation:pulseRing 2.8s ease-out infinite;
+    transition:stroke .3s ease;
+  }
+  .pulse-ring.ring2{ animation-delay:1.4s; }
+  @keyframes pulseRing{
+    0%{ transform:scale(0.75); opacity:0.5; }
+    100%{ transform:scale(1.7); opacity:0; }
+  }
+  .status-visual.amber .pulse-core{ fill:var(--amber); }
+  .status-visual.amber .pulse-ring{ stroke:var(--amber); animation-duration:1.1s; }
+  .status-visual.brick .pulse-core{ fill:var(--brick); }
+  .status-visual.brick .pulse-ring{ stroke:var(--brick); animation-duration:0.6s; }
+  .controls{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  button{
+    font-family:inherit;
+    font-size:15px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  button:active{ transform: scale(0.97); }
+  #fallBtn{
+    background:var(--sky);
+    color:#fff;
+    border:none;
+    padding:13px 22px;
+    font-weight:700;
+    box-shadow:0 2px 0 rgba(14,124,176,0.35);
+  }
+  #fallBtn:disabled{
+    background:#B9C6C3;
+    box-shadow:none;
+    cursor:not-allowed;
+  }
+  #resetBtn{
+    background:transparent;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    padding:12px 18px;
+  }
+  .status{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-weight:700;
+    font-size:14px;
+    padding:8px 14px;
+    border-radius:20px;
+    background:var(--sky-soft);
+    color:var(--sky);
+  }
+  .status .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--sky);
+  }
+  .status.amber{ background:var(--amber-soft); color:var(--amber-ink); }
+  .status.amber .dot{ background:var(--amber); }
+  .status.brick{ background:var(--brick-soft); color:var(--brick); }
+  .status.brick .dot{ background:var(--brick); }
+  .synctip{
+    margin:14px 0 0;
+    font-size:13px;
+    color:var(--ink-soft);
+    max-width:520px;
+    line-height:1.5;
+  }
+  .conn-banner{
+    display:none;
+    font-size:13px;
+    font-weight:700;
+    padding:9px 14px;
+    border-radius:8px;
+    margin-bottom:14px;
+  }
+  .conn-banner.show{ display:block; }
+  .conn-banner.warn{ background:var(--brick-soft); color:var(--brick); }
+  .conn-banner.pending{ background:var(--amber-soft); color:var(--amber-ink); }
+  .conn-banner.ok{ background:var(--sky-soft); color:var(--sky); }
+
+  /* Role gate */
+  .role-gate{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:24px;
+    margin-bottom:20px;
+  }
+  .reset-notice{
+    background:var(--amber-soft);
+    color:var(--amber-ink);
+    font-size:13.5px;
+    font-weight:700;
+    padding:10px 14px;
+    border-radius:8px;
+    margin:0 0 16px;
+  }
+  .role-options{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:12px;
+    margin-top:6px;
+  }
+  @media (max-width:640px){
+    .role-options{ grid-template-columns:1fr; }
+  }
+  .role-btn{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:4px;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+    text-align:left;
+  }
+  .role-btn:hover{ border-color:var(--sky); }
+  .role-btn-title{
+    font-weight:700;
+    font-size:15px;
+    color:var(--sky);
+  }
+  .role-btn-sub{
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .observer-link{
+    display:block;
+    margin:16px auto 0;
+    background:none;
+    border:none;
+    padding:4px;
+    color:var(--ink-soft);
+    font-size:13px;
+    text-decoration:underline;
+  }
+  .name-input{
+    display:block;
+    width:100%;
+    max-width:320px;
+    font-family:inherit;
+    font-size:16px;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--paper);
+    color:var(--ink);
+    margin-top:10px;
+  }
+  .name-input:focus{ outline:2px solid var(--sky); outline-offset:1px; }
+  .role-options-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-top:16px;
+  }
+  .back-link{
+    background:none;
+    border:none;
+    padding:0;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+  .continue-btn{
+    background:var(--sky);
+    color:#fff;
+    border:none;
+    padding:11px 20px;
+    border-radius:8px;
+    font-weight:700;
+    font-size:14px;
+  }
+  .continue-btn:disabled{
+    background:#B9C6C3;
+    cursor:not-allowed;
+  }
+
+  /* Viewing-as bar */
+  .viewing-as{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:16px;
+    flex-wrap:wrap;
+  }
+  #viewingAsText{
+    overflow-wrap:break-word;
+    word-break:break-word;
+    min-width:0;
+  }
+  .switch-link{
+    background:none;
+    border:none;
+    padding:0;
+    color:var(--sky);
+    font-weight:700;
+    text-decoration:underline;
+    font-size:13px;
+  }
+  .hidden-role{ display:none !important; }
+  .accounts.single{
+    grid-template-columns:1fr;
+    max-width:340px;
+  }
+  .phones.single{
+    grid-template-columns:1fr;
+    max-width:460px;
+  }
+
+  /* Account cards */
+  .section-label{
+    font-family:'Plus Jakarta Sans', sans-serif;
+    font-weight:600;
+    font-size:19px;
+    color:var(--sky);
+    margin:0 0 4px;
+  }
+  .section-hint{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    margin:0 0 16px;
+  }
+  .accounts{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:16px;
+    margin:14px 0 40px;
+  }
+  @media (max-width:760px){
+    .accounts{ grid-template-columns:1fr; }
+  }
+  .roster-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin:14px 0 40px;
+  }
+  .roster-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px 12px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:13px 16px;
+    transition:border-color .3s ease, background .3s ease, transform .3s ease;
+  }
+  .roster-item .roster-who{
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    overflow:hidden;
+  }
+  .roster-item .roster-name{
+    font-weight:700;
+    font-size:14.5px;
+    color:var(--ink);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .roster-item .roster-room{
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .roster-item .roster-status{
+    flex-shrink:0;
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:12.5px;
+    font-weight:700;
+    padding:5px 11px;
+    border-radius:20px;
+    white-space:nowrap;
+    background:var(--sky-soft);
+    color:var(--sky);
+  }
+  .roster-item.amber{
+    border-color:#E9CE93;
+    background:var(--amber-soft);
+    transform:scale(1.02);
+  }
+  .roster-item.amber .roster-status{ background:#fff; color:var(--amber-ink); }
+  .roster-item.brick{
+    border-color:#E2ACA6;
+    background:var(--brick-soft);
+    transform:scale(1.02);
+  }
+  .roster-item.brick .roster-status{ background:#fff; color:var(--brick); }
+  .account-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:18px;
+  }
+  .account-top{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:12px;
+    min-width:0;
+  }
+  .account-top > div{
+    min-width:0;
+    overflow:hidden;
+  }
+  .avatar{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    font-size:15px;
+    flex-shrink:0;
+  }
+  .avatar.sky{ background:var(--sky-soft); color:var(--sky); }
+  .avatar.amber{ background:var(--amber-soft); color:var(--amber-ink); }
+  .avatar.slate{ background:var(--slate-soft); color:var(--slate); }
+  .account-name{
+    font-weight:700;
+    font-size:15.5px;
+    color:var(--ink);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .account-role{
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .account-details{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    font-size:13.5px;
+    color:var(--ink-soft);
+    border-top:1px solid var(--line);
+    padding-top:10px;
+  }
+  .account-details strong{
+    color:var(--ink);
+    font-weight:700;
+  }
+
+  /* Phones */
+  .phones{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    margin:36px 0;
+  }
+  @media (max-width:640px){
+    .phones{ grid-template-columns:1fr; }
+  }
+  .phone{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    min-height:340px;
+    position:relative;
+  }
+  .app-open-label{
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    color:var(--ink-soft);
+    padding:10px 14px 0;
+  }
+  .push-banner{
+    position:absolute;
+    top:10px;
+    left:10px;
+    right:10px;
+    background:rgba(255,255,255,0.98);
+    border-radius:14px;
+    box-shadow:0 10px 28px rgba(20,40,50,0.22);
+    padding:10px 12px;
+    z-index:5;
+    opacity:0;
+    transform:translateY(-16px);
+    transition:opacity .3s ease, transform .3s ease;
+    pointer-events:none;
+  }
+  .push-banner.show{
+    opacity:1;
+    transform:translateY(0);
+  }
+  .push-banner-top{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-bottom:3px;
+  }
+  .push-banner-icon{
+    width:18px;
+    height:18px;
+    border-radius:6px;
+    background:var(--sky);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .push-banner-icon svg{ width:12px; height:12px; }
+  .push-banner-app{
+    font-size:11px;
+    font-weight:700;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.03em;
+  }
+  .push-banner-time{
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-left:auto;
+  }
+  .push-banner-title{
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .push-banner-body{
+    font-size:13px;
+    color:var(--ink);
+    opacity:0.85;
+    line-height:1.35;
+    margin-top:1px;
+  }
+  .phone-header{
+    padding:16px 18px;
+    border-bottom:1px solid var(--line);
+    font-weight:700;
+    font-size:15px;
+    color:var(--sky);
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:4px 10px;
+  }
+  .phone-header span:first-child{
+    overflow-wrap:break-word;
+    word-break:break-word;
+    min-width:0;
+  }
+  .phone-header span.role{
+    font-weight:400;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .notif-stack{
+    padding:14px;
+    display:flex;
+    flex-direction:column;
+    flex:1;
+    position:relative;
+  }
+  .notif-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .notif-empty{
+    color:var(--ink-soft);
+    font-size:14px;
+    padding:20px 6px;
+  }
+  .notif{
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:14.5px;
+    line-height:1.45;
+    border:1px solid var(--line);
+    background:var(--sky-soft);
+    color:var(--sky);
+    animation:slideIn .28s ease;
+  }
+  .notif.amber{ background:var(--amber-soft); color:var(--amber-ink); border-color:#E9CE93; }
+  .notif.brick{ background:var(--brick-soft); color:var(--brick); border-color:#E2ACA6; }
+  .notif.resolved{ background:#E7EFE6; color:#3E6B39; border-color:#C9DDC5; }
+  .notif .time{
+    display:block;
+    font-size:11.5px;
+    opacity:0.7;
+    margin-bottom:4px;
+  }
+  .notif .actions{
+    margin-top:10px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .notif .actions button{
+    background:#fff;
+    border:1px solid currentColor;
+    color:inherit;
+    padding:7px 13px;
+    font-weight:700;
+    font-size:13px;
+  }
+  .notif .actions button.urgent{
+    background:var(--brick);
+    border-color:var(--brick);
+    color:#fff;
+  }
+  .waiting-note{
+    margin-top:8px;
+    font-size:12.5px;
+    font-style:italic;
+    opacity:0.75;
+  }
+  @keyframes slideIn{
+    from{ opacity:0; transform:translateY(-6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  /* Log */
+  .log{
+    margin-top:12px;
+  }
+  .log h2{
+    font-family:'Plus Jakarta Sans', sans-serif;
+    font-weight:600;
+    font-size:19px;
+    color:var(--sky);
+    margin:0 0 10px;
+  }
+  .log ul{
+    list-style:none;
+    margin:0;
+    padding:0;
+    border-top:1px solid var(--line);
+  }
+  .log li{
+    padding:10px 2px;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+    display:flex;
+    gap:12px;
+  }
+  .log li .t{
+    color:var(--ink-soft);
+    font-size:12.5px;
+    min-width:64px;
+  }
+  .log-empty{
+    padding:16px 2px;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+
+  /* About / footer */
+  .about{
+    margin-top:48px;
+    padding-top:28px;
+    border-top:1px solid var(--line);
+  }
+  .about p{
+    font-size:14px;
+    line-height:1.6;
+    color:var(--ink-soft);
+    max-width:600px;
+    margin:0 0 14px;
+  }
+  .credit{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-top:6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="hero">
+    <p class="wordmark">FallGuard</p>
+    <div class="status-visual" id="statusVisual">
+      <svg viewBox="0 0 120 120" class="pulse-svg">
+        <circle class="pulse-ring ring1" cx="60" cy="60" r="30"/>
+        <circle class="pulse-ring ring2" cx="60" cy="60" r="30"/>
+        <circle class="pulse-core" cx="60" cy="60" r="26"/>
+        <path class="pulse-line" d="M28,60 L44,60 L51,44 L60,78 L69,48 L76,60 L92,60" fill="none" stroke="white" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <div id="roleGate" class="role-gate">
+    <p id="resetNotice" class="reset-notice" style="display:none;">The simulation was just reset — pick a role and enter your name again to rejoin.</p>
+    <div id="roleStep1">
+      <p class="section-label">Who are you?</p>
+      <p class="section-hint">Pick what best describes you — this screen will only show what that person would actually see.</p>
+      <div class="role-options">
+        <button class="role-btn" onclick="pickRole('recipient')">
+          <span class="role-btn-title">Care recipient</span>
+          <span class="role-btn-sub">The person being looked after</span>
+        </button>
+        <button class="role-btn" onclick="pickRole('contact')">
+          <span class="role-btn-title">Emergency contact</span>
+          <span class="role-btn-sub">Family or a trusted person</span>
+        </button>
+        <button class="role-btn" onclick="pickRole('caretaker')">
+          <span class="role-btn-title">Caretaker</span>
+          <span class="role-btn-sub">Care worker or facility staff</span>
+        </button>
+      </div>
+      <button class="observer-link" onclick="chooseRole('observer')">Just observing, for a demo →</button>
+    </div>
+    <div id="roleStep2" style="display:none;">
+      <p class="section-label">What's your first name?</p>
+      <p class="section-hint" id="roleStep2Hint">So the other side of this knows who they're hearing from.</p>
+      <input id="nameInput" class="name-input" type="text" placeholder="First name" maxlength="30" autocomplete="off">
+      <div class="role-options-row">
+        <button class="back-link" onclick="backToRoleStep1()">← Back</button>
+        <button id="nameContinueBtn" class="continue-btn" onclick="confirmName()">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="appBody" style="display:none;">
+
+  <div id="connBanner" class="conn-banner"></div>
+
+  <div class="viewing-as">
+    <span id="viewingAsText">Viewing as…</span>
+    <button class="switch-link" onclick="clearRole()">Switch</button>
+  </div>
+
+  <div class="controls">
+    <button id="fallBtn" onclick="startFallSequence()">Simulate a fall</button>
+    <button id="resetBtn" onclick="resetAll()">Reset</button>
+    <div class="status" id="statusBadge"><span class="dot"></span><span id="statusText">Watching — no fall detected</span></div>
+  </div>
+  <p class="synctip">This simulation syncs live over Firebase: open it on two devices or browser tabs, and actions taken on one show up on the other in real time.</p>
+
+  <div id="caretakerRoster" class="hidden-role">
+    <p class="section-label">Your residents</p>
+    <p class="section-hint">A mockup of what a caretaker managing several people at once would see — whoever needs attention rises to the top automatically.</p>
+    <div id="rosterList" class="roster-list"></div>
+  </div>
+
+  <div>
+    <p class="section-label">Accounts</p>
+    <p class="section-hint" id="accountsHint">Whoever has joined so far, live.</p>
+    <div class="accounts" id="accountsGrid">
+      <div class="account-card" id="acctRecipient">
+        <div class="account-top">
+          <div class="avatar sky" id="acctRecipientAvatar">?</div>
+          <div>
+            <div class="account-name" id="acctRecipientName">Waiting to join</div>
+            <div class="account-role">Care recipient</div>
+          </div>
+        </div>
+      </div>
+      <div class="account-card" id="acctContact">
+        <div class="account-top">
+          <div class="avatar amber" id="acctContactAvatar">?</div>
+          <div>
+            <div class="account-name" id="acctContactName">Waiting to join</div>
+            <div class="account-role">Emergency contact</div>
+          </div>
+        </div>
+      </div>
+      <div class="account-card" id="acctCaretaker">
+        <div class="account-top">
+          <div class="avatar slate" id="acctCaretakerAvatar">?</div>
+          <div>
+            <div class="account-name" id="acctCaretakerName">Waiting to join</div>
+            <div class="account-role">Caretaker</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phones" id="phonesGrid">
+    <div class="phone" id="phoneRecipient">
+      <div class="phone-header"><span id="phoneRecipientName">Care recipient</span> <span class="role" id="phoneRecipientRole">care recipient</span></div>
+      <div class="app-open-label" id="phoneRecipientLabel">Inside the app</div>
+      <div class="notif-stack" id="userNotifs">
+        <div class="push-banner" id="pushBannerRecipient"></div>
+        <div class="notif-list" id="userNotifList">
+          <div class="notif-empty">No alerts yet.</div>
+        </div>
+      </div>
+    </div>
+    <div class="phone" id="phoneContact">
+      <div class="phone-header"><span id="phoneContactName">Emergency contact</span> <span class="role">emergency contact</span></div>
+      <div class="app-open-label">Inside the app</div>
+      <div class="notif-stack" id="contactNotifs">
+        <div class="push-banner" id="pushBannerContact"></div>
+        <div class="notif-list" id="contactNotifList">
+          <div class="notif-empty">No alerts yet.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="log" id="logSection">
+    <h2>Event log</h2>
+    <ul id="eventLog"></ul>
+    <div class="log-empty" id="logEmpty">Nothing has happened yet — try simulating a fall above.</div>
+  </div>
+
+  <div class="about">
+    <p>A waist-worn accelerometer feeds a Raspberry Pi at roughly 50 readings a second. When the freefall → impact → stillness signature of a real fall is confirmed, a buzzer sounds immediately — and this notification cascade starts in parallel, checking on the care recipient and pulling in their emergency contact if they can't respond.</p>
+    <p>Demo timing: each notification stage waits 8 seconds for a response instead of the minutes a real device would allow. Detection itself is classical signal processing on the real device — no LLM involved.</p>
+    <p class="credit">Built by Kadair Walker, Dharma Swaroop, Pragnya Eranki, and Nidhi Mendu — SteelHacks 2026.</p>
+  </div>
+
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-database-compat.js"></script>
+<script>
+// ======================================================================
+// FIREBASE SETUP — paste your config from the Firebase console below.
+// Console > Project settings > General > Your apps > Web app > SDK setup.
+// ======================================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyCiCtqokKouv_Uctubq7BZhkoSaOa5ijRI",
+  authDomain: "fallguard-demo.firebaseapp.com",
+  databaseURL: "https://fallguard-demo-default-rtdb.firebaseio.com",
+  projectId: "fallguard-demo",
+  storageBucket: "fallguard-demo.firebasestorage.app",
+  messagingSenderId: "186056966057",
+  appId: "1:186056966057:web:0d62c4afc4a2aabfda8eb8"
+};
+// ======================================================================
+
+const STAGE_MS = 8000;
+const STATE_PATH = 'fallguard_state';
+// The real hardware sensor writes here (a tiny {ts, source} record) instead
+// of touching the full state directly — keeps the Pi's job simple and all
+// the notification logic in one place.
+const TRIGGER_PATH = 'fallguard_trigger';
+
+const userNotifs = document.getElementById('userNotifList');
+const contactNotifs = document.getElementById('contactNotifList');
+const eventLog = document.getElementById('eventLog');
+const logEmpty = document.getElementById('logEmpty');
+const triggerBtn = document.getElementById('fallBtn');
+const statusBadge = document.getElementById('statusBadge');
+const statusText = document.getElementById('statusText');
+const statusVisual = document.getElementById('statusVisual');
+
+const roleGate = document.getElementById('roleGate');
+const resetNotice = document.getElementById('resetNotice');
+const roleStep1 = document.getElementById('roleStep1');
+const roleStep2 = document.getElementById('roleStep2');
+const roleStep2Hint = document.getElementById('roleStep2Hint');
+const nameInput = document.getElementById('nameInput');
+const appBody = document.getElementById('appBody');
+const viewingAsText = document.getElementById('viewingAsText');
+const phoneRecipient = document.getElementById('phoneRecipient');
+const phoneContact = document.getElementById('phoneContact');
+const phoneRecipientName = document.getElementById('phoneRecipientName');
+const phoneContactName = document.getElementById('phoneContactName');
+const pushBannerRecipient = document.getElementById('pushBannerRecipient');
+const pushBannerContact = document.getElementById('pushBannerContact');
+const acctRecipient = document.getElementById('acctRecipient');
+const acctContact = document.getElementById('acctContact');
+const acctCaretaker = document.getElementById('acctCaretaker');
+const accountsHint = document.getElementById('accountsHint');
+const logSection = document.getElementById('logSection');
+const caretakerRoster = document.getElementById('caretakerRoster');
+const rosterList = document.getElementById('rosterList');
+
+let myRole = null;
+let myName = null;
+let pendingRole = null;
+let fbReady = false;
+
+const ROLE_LABELS = { recipient: 'Care recipient', contact: 'Emergency contact', caretaker: 'Caretaker', observer: 'Observer' };
+const phonesGrid = document.getElementById('phonesGrid');
+const accountsGrid = document.getElementById('accountsGrid');
+
+function displayName(role){
+  const p = sharedState.people && sharedState.people[role];
+  return (p && p.name) ? p.name : null;
+}
+
+function applyRoleView(){
+  const label = myRole === 'observer' ? 'Observer' : (myName ? myName + ' · ' + ROLE_LABELS[myRole] : ROLE_LABELS[myRole]);
+  viewingAsText.textContent = 'Viewing as ' + label;
+
+  const isObserver = myRole === 'observer';
+  phoneRecipient.classList.toggle('hidden-role', !(myRole === 'recipient' || myRole === 'caretaker' || isObserver));
+  phoneContact.classList.toggle('hidden-role', !(myRole === 'contact' || isObserver));
+  logSection.classList.toggle('hidden-role', !isObserver);
+  caretakerRoster.classList.toggle('hidden-role', myRole !== 'caretaker');
+
+  const monitoring = (myRole === 'caretaker');
+  document.getElementById('phoneRecipientRole').textContent = monitoring ? "resident you're monitoring" : 'care recipient';
+  document.getElementById('phoneRecipientLabel').textContent = monitoring ? 'What you can see' : 'Inside the app';
+
+  if(myRole === 'recipient' || myRole === 'contact' || myRole === 'caretaker'){
+    accountsHint.textContent = 'Whoever has joined so far, live.';
+    phonesGrid.classList.add('single');
+  } else {
+    accountsHint.textContent = 'Whoever has joined so far, live.';
+    phonesGrid.classList.remove('single');
+  }
+  renderRoster();
+}
+
+function pickRole(role){
+  pendingRole = role;
+  roleStep2Hint.textContent = role === 'caretaker'
+    ? "So the recipient and their contact know who's looking in."
+    : "So the other side of this knows who they're hearing from.";
+  roleStep1.style.display = 'none';
+  roleStep2.style.display = 'block';
+  nameInput.value = '';
+  nameInput.focus();
+}
+
+function backToRoleStep1(){
+  pendingRole = null;
+  roleStep2.style.display = 'none';
+  roleStep1.style.display = 'block';
+}
+
+function confirmName(){
+  const typed = nameInput.value.trim().slice(0, 30);
+  if(!typed) { nameInput.focus(); return; }
+  myName = typed;
+  myRole = pendingRole;
+  saveIdentity(myRole, myName);
+  enterApp();
+}
+
+function saveIdentity(role, name){
+  runTransaction(s => {
+    s.people = s.people || {};
+    s.people[role] = { name: name };
+    return true;
+  });
+}
+
+function chooseRole(role){
+  myRole = role;
+  myName = null;
+  enterApp();
+}
+
+function enterApp(){
+  roleGate.style.display = 'none';
+  appBody.style.display = 'block';
+  applyRoleView();
+}
+
+function clearRole(reason){
+  myRole = null;
+  myName = null;
+  pendingRole = null;
+  appBody.style.display = 'none';
+  roleGate.style.display = 'block';
+  roleStep1.style.display = 'block';
+  roleStep2.style.display = 'none';
+  resetNotice.style.display = reason === 'reset' ? 'block' : 'none';
+}
+
+function newState(){
+  return {
+    active: false,
+    user: { stage: 0, resolved: false },
+    contact: { stage: 0, resolved: false },
+    userNextAt: null,
+    contactNextAt: null,
+    notifs: { user: [], contact: [], caretaker: [] },
+    log: [],
+    people: { recipient: null, contact: null, caretaker: null },
+    status: { mode: 'default', text: 'Watching — no fall detected' },
+    resetEpoch: Date.now()
+  };
+}
+
+let sharedState = newState();
+let seenResetEpoch = null;
+
+function nowStr(){
+  return new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+
+// ---- pure reducers: each takes the current state and mutates a fresh
+// copy of it. Firebase runs these inside a transaction, so if two devices
+// act at the same instant, Firebase retries with the latest data instead
+// of one write silently clobbering the other. ----
+
+function pushLogOn(s, text){
+  s.log = s.log || [];
+  s.log.unshift({ t: nowStr(), text });
+  if(s.log.length > 40) s.log.length = 40;
+}
+
+function pushNotifOn(s, track, notif){
+  notif.time = nowStr();
+  notif.ts = Date.now();
+  s.notifs[track] = s.notifs[track] || [];
+  s.notifs[track].unshift(notif);
+  if(s.notifs[track].length > 15) s.notifs[track].length = 15;
+}
+
+function rName(s){
+  return (s.people && s.people.recipient && s.people.recipient.name) || 'the care recipient';
+}
+function cName(s){
+  return (s.people && s.people.contact && s.people.contact.name) || 'their emergency contact';
+}
+
+function contactActionsSpec(){
+  return [
+    { key: 'contactDefer', label: "I'll check on them — don't call emergency services" },
+    { key: 'contactEscalate', label: "I'll check on them — call emergency services", urgent: true }
+  ];
+}
+
+function advanceUserStageOn(s){
+  s.user.stage += 1;
+  const st = s.user.stage;
+  if(st === 1){
+    pushNotifOn(s, 'user', {
+      tone: 'amber', title: 'Are you okay?',
+      body: "We detected a possible fall and your device's alarm has sounded. Let us know you're alright.",
+      actions: [{ key: 'userOkay', label: "I'm okay" }]
+    });
+    pushLogOn(s, 'Sent ' + rName(s) + ': "Are you okay?"');
+    s.userNextAt = Date.now() + STAGE_MS;
+  } else if(st === 2){
+    pushNotifOn(s, 'user', {
+      tone: 'amber', title: 'Still there?',
+      body: "We haven't heard back. If you don't respond, we'll contact local emergency services.",
+      actions: [{ key: 'userOkay', label: "I'm okay" }]
+    });
+    pushLogOn(s, 'Sent ' + rName(s) + ' a follow-up warning.');
+    s.userNextAt = Date.now() + STAGE_MS;
+  } else if(st === 3){
+    pushNotifOn(s, 'user', {
+      tone: 'brick', title: 'Emergency services contacted',
+      body: 'Local emergency services have been notified of your location.'
+    });
+    pushLogOn(s, 'No response from ' + rName(s) + ' — emergency services notified.');
+    s.userNextAt = null;
+  }
+}
+
+function advanceContactStageOn(s){
+  s.contact.stage += 1;
+  const st = s.contact.stage;
+  const recipient = rName(s);
+  if(st === 1){
+    pushNotifOn(s, 'contact', {
+      tone: 'amber', title: 'Check on ' + recipient,
+      body: recipient + "'s device detected a possible fall and its alarm has sounded. Please check on them.",
+      actions: contactActionsSpec()
+    });
+    pushLogOn(s, 'Sent ' + cName(s) + ': "Please check on ' + recipient + '."');
+    s.contactNextAt = Date.now() + STAGE_MS;
+  } else if(st === 2){
+    pushNotifOn(s, 'contact', {
+      tone: 'amber', title: 'Still no word',
+      body: "We haven't heard from " + recipient + " or you. Local emergency services will be contacted if nobody responds.",
+      actions: contactActionsSpec()
+    });
+    pushLogOn(s, 'Sent ' + cName(s) + ' a follow-up warning.');
+    s.contactNextAt = Date.now() + STAGE_MS;
+  } else if(st === 3){
+    pushNotifOn(s, 'contact', {
+      tone: 'brick', title: 'Emergency services contacted',
+      body: "Local emergency services have been notified — " + recipient + "'s location was shared."
+    });
+    pushLogOn(s, 'No response from ' + cName(s) + ' — emergency services notified.');
+    s.contactNextAt = null;
+  }
+}
+
+function finalizeIfDoneOn(s){
+  const userDone = s.user.resolved || s.user.stage === 3;
+  const contactDone = s.contact.resolved || s.contact.stage === 3;
+  if(userDone && contactDone){
+    s.active = false;
+    const anyEscalated = s.user.stage === 3 || s.contact.stage === 3;
+    s.status = anyEscalated
+      ? { mode: 'brick', text: 'Escalated — emergency services notified' }
+      : { mode: 'default', text: 'Resolved — everyone is okay' };
+  }
+}
+
+function forceEmergencyNowOn(s, via){
+  const recipient = rName(s);
+  const contact = cName(s);
+  s.contact.resolved = true;
+  s.contact.stage = 3;
+  s.contactNextAt = null;
+  pushNotifOn(s, 'contact', {
+    tone: 'brick', title: 'Emergency services notified',
+    body: via === 'followup'
+      ? "Confirmed — emergency services have been contacted and given " + recipient + "'s location."
+      : "You confirmed — we've contacted emergency services and shared " + recipient + "'s location."
+  });
+  pushLogOn(s, via === 'followup' ? contact + ' followed up — emergency services contacted.' : contact + ' asked us to call emergency services right away.');
+
+  s.user.resolved = true;
+  s.user.stage = 3;
+  s.userNextAt = null;
+  pushNotifOn(s, 'user', {
+    tone: 'brick', title: 'Emergency services contacted',
+    body: via === 'followup'
+      ? contact + " checked back in and asked us to contact emergency services on your behalf."
+      : contact + " asked us to contact emergency services on your behalf."
+  });
+  pushLogOn(s, via === 'followup' ? "Sent " + recipient + ": emergency services contacted after " + contact + "'s follow-up." : "Sent " + recipient + ": emergency services contacted at " + contact + "'s request.");
+
+  finalizeIfDoneOn(s);
+}
+
+// ---- actions (triggered by buttons; each runs one transaction) ----
+
+function startFallSequence(){
+  runTransaction(s => {
+    if(s.active) return false;
+    const people = s.people;
+    const resetEpoch = s.resetEpoch;
+    Object.assign(s, newState());
+    s.people = people;
+    s.resetEpoch = resetEpoch;
+    s.active = true;
+    s.status = { mode: 'amber', text: 'Possible fall detected — alerting ' + rName(s) + ' and ' + cName(s) };
+    pushLogOn(s, 'Wearable sensor flagged a possible fall.');
+    advanceUserStageOn(s);
+    advanceContactStageOn(s);
+    return true;
+  });
+}
+
+function userOkay(){
+  runTransaction(s => {
+    if(s.user.resolved) return false;
+    const recipient = rName(s);
+    s.user.resolved = true;
+    s.userNextAt = null;
+    pushNotifOn(s, 'user', { tone: 'resolved', title: "Glad you're okay", body: 'No further action needed.' });
+    pushLogOn(s, recipient + " responded — they're okay.");
+    if(!s.contact.resolved && s.contact.stage < 3){
+      s.contact.resolved = true;
+      s.contactNextAt = null;
+      pushNotifOn(s, 'contact', { tone: 'resolved', title: recipient + ' is okay', body: 'They responded directly — no need to check on them.' });
+      pushLogOn(s, 'Notified ' + cName(s) + ' that ' + recipient + ' is safe.');
+    }
+    finalizeIfDoneOn(s);
+    return true;
+  });
+}
+
+function contactDefer(){
+  runTransaction(s => {
+    if(s.contact.resolved) return false;
+    const recipient = rName(s);
+    const contact = cName(s);
+    s.contact.resolved = true;
+    s.contactNextAt = null;
+    pushNotifOn(s, 'contact', {
+      tone: 'resolved', title: 'Okay, holding off',
+      body: "We won't contact emergency services while you check on them.",
+      actions: [{ key: 'contactFollowup', label: 'Actually, call emergency services now', urgent: true }]
+    });
+    pushLogOn(s, contact + ' is checking on ' + recipient + ' — emergency services on hold.');
+    if(!s.user.resolved && s.user.stage < 3){
+      s.user.resolved = true;
+      s.userNextAt = null;
+      pushNotifOn(s, 'user', { tone: 'resolved', title: 'Help is on the way', body: contact + " is checking on you in person. We've held off on contacting emergency services." });
+      pushLogOn(s, 'Let ' + recipient + ' know ' + contact + ' is on the way, no emergency call yet.');
+    }
+    finalizeIfDoneOn(s);
+    return true;
+  });
+}
+
+function contactEscalate(){
+  runTransaction(s => {
+    if(s.contact.stage === 3) return false;
+    forceEmergencyNowOn(s, 'initial');
+    return true;
+  });
+}
+
+function contactFollowup(){
+  runTransaction(s => {
+    forceEmergencyNowOn(s, 'followup');
+    return true;
+  });
+}
+
+const ACTION_MAP = { userOkay, contactDefer, contactEscalate, contactFollowup };
+
+function resetAll(){
+  if(fbReady){
+    stateRef.set(newState());
+  } else {
+    sharedState = newState();
+    render();
+  }
+}
+
+// ---- render ----
+
+// The recipient's own notifications are written as direct address
+// ("Are you okay?", "I'm okay"). A caretaker looking at someone else's
+// device shouldn't see it phrased as if it's happening to them — this
+// rewrites the known notification types into third person, by name.
+function caretakerizeNotif(n, name, contactName){
+  const out = Object.assign({}, n);
+  const relabelUserOkay = (actions) => actions && actions.map(a =>
+    a.key === 'userOkay' ? Object.assign({}, a, { label: 'Confirm ' + name + ' is okay' }) : a
+  );
+  switch(n.title){
+    case 'Are you okay?':
+      // Mirrors the emergency contact's own "Check on [name]" alert almost
+      // word for word — a caretaker should read the same kind of message
+      // a family member would get, not the recipient's first-person one.
+      out.title = 'Check on ' + name;
+      out.body = name + "'s device detected a possible fall and its alarm has sounded. Please check on them.";
+      out.actions = relabelUserOkay(n.actions);
+      break;
+    case 'Still there?':
+      out.title = 'Still no word';
+      out.body = "We haven't heard from " + name + ". Local emergency services will be contacted if nobody responds.";
+      out.actions = relabelUserOkay(n.actions);
+      break;
+    case "Glad you're okay":
+      out.title = name + ' is okay';
+      out.body = 'They responded directly — no need to check on them.';
+      break;
+    case 'Help is on the way':
+      out.title = 'Help is on the way for ' + name;
+      out.body = n.body.replace('checking on you in person', 'checking on ' + name + ' in person');
+      break;
+    case 'Emergency services contacted':
+      // One card, not two — folds in that the contact was notified too,
+      // instead of a separate near-duplicate notification for the same event.
+      out.body = 'Local emergency services have been notified — ' + name + "'s location was shared. " + contactName + ' was also notified.';
+      break;
+  }
+  return out;
+}
+
+// The recipient's own device only ever shows their own notifications,
+// unedited. A caretaker sees the same events but rephrased in third
+// person — no separate duplicate note is added for the contact side;
+// that detail is folded into the one "emergency services contacted" card.
+function recipientFeedFor(role){
+  const base = sharedState.notifs.user || [];
+  if(role !== 'caretaker') return base;
+  const name = displayName('recipient') || 'the care recipient';
+  const contact = displayName('contact') || 'their emergency contact';
+  return base.map(n => caretakerizeNotif(n, name, contact));
+}
+
+function renderStack(container, notifs, interactive){
+  if(!notifs || !notifs.length){
+    container.innerHTML = '<div class="notif-empty">No alerts yet.</div>';
+    return;
+  }
+  container.innerHTML = notifs.map(n => {
+    const toneClass = n.tone ? ' ' + n.tone : '';
+    let actionsHtml = '';
+    if(n.actions && n.actions.length){
+      if(interactive){
+        actionsHtml = '<div class="actions">' + n.actions.map(a =>
+          '<button data-action="' + a.key + '" class="' + (a.urgent ? 'urgent' : '') + '">' + a.label + '</button>'
+        ).join('') + '</div>';
+      } else {
+        actionsHtml = '<div class="waiting-note">Waiting for their response — only their own device can act on this.</div>';
+      }
+    }
+    return '<div class="notif' + toneClass + '"><span class="time">' + (n.time || '') + '</span><strong>' + n.title + '</strong><br>' + n.body + actionsHtml + '</div>';
+  }).join('');
+  if(interactive){
+    container.querySelectorAll('button[data-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-action');
+        if(ACTION_MAP[key]) ACTION_MAP[key]();
+      });
+    });
+  }
+}
+
+// Firebase's Realtime Database can't store an empty array/object — a
+// container with zero children just doesn't exist when read back. That
+// means "notifs", "log", etc. can come back as undefined right after a
+// reset. This patches any state (local or from Firebase) back into the
+// full shape the rest of the app expects, before anything reads from it.
+function ensureShape(s){
+  s = s || {};
+  s.active = !!s.active;
+  s.user = s.user || { stage: 0, resolved: false };
+  s.contact = s.contact || { stage: 0, resolved: false };
+  s.notifs = s.notifs || {};
+  s.notifs.user = s.notifs.user || [];
+  s.notifs.contact = s.notifs.contact || [];
+  s.notifs.caretaker = s.notifs.caretaker || [];
+  s.log = s.log || [];
+  s.people = s.people || {};
+  s.status = s.status || { mode: 'default', text: 'Watching — no fall detected' };
+  s.resetEpoch = s.resetEpoch || 0;
+  return s;
+}
+
+function initial(name){
+  return name ? name.trim().charAt(0).toUpperCase() : '?';
+}
+
+function renderAccountCard(role, nameEl, avatarEl){
+  const p = sharedState.people[role];
+  if(p && p.name){
+    nameEl.textContent = p.name;
+    avatarEl.textContent = initial(p.name);
+  } else {
+    nameEl.textContent = 'Waiting to join';
+    avatarEl.textContent = '?';
+  }
+}
+
+// A handful of made-up residents so a caretaker's view feels like it's
+// managing a real caseload, not just one demo device. None of this is
+// live data — only the real recipient (pulled from shared state) moves
+// or changes.
+const PRETEND_PATIENTS = [
+  { name: 'Eleanor Diaz', room: 'Room 108' },
+  { name: 'Walter Kim', room: 'Room 112' },
+  { name: 'Josephine Brooks', room: 'Room 204' },
+  { name: 'Marcus Webb', room: 'Room 207' }
+];
+
+function renderRoster(){
+  if(myRole !== 'caretaker') return;
+
+  const mode = sharedState.status.mode;
+  const alerting = mode === 'amber' || mode === 'brick';
+  const shortStatus = mode === 'brick' ? 'Emergency contacted' : mode === 'amber' ? 'Checking in' : 'All clear';
+  const recipient = {
+    name: displayName('recipient') || 'Care recipient (not yet joined)',
+    room: 'Live device — this simulation',
+    tone: alerting ? mode : 'calm',
+    status: shortStatus
+  };
+
+  const pretend = PRETEND_PATIENTS.map(p => ({ name: p.name, room: p.room, tone: 'calm', status: 'All clear' }));
+  const list = alerting ? [recipient, ...pretend] : [...pretend.slice(0, 2), recipient, ...pretend.slice(2)];
+
+  rosterList.innerHTML = list.map(p =>
+    '<div class="roster-item ' + (p.tone === 'calm' ? '' : p.tone) + '">' +
+      '<div class="roster-who"><span class="roster-name">' + p.name + '</span><span class="roster-room">' + p.room + '</span></div>' +
+      '<span class="roster-status">' + p.status + '</span>' +
+    '</div>'
+  ).join('');
+}
+
+const PUSH_ICON_SVG = '<svg viewBox="0 0 24 24"><path d="M4,12 L8,12 L10,8 L12,16 L14,9 L16,12 L20,12" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+let lastBannerKey = { user: undefined, contact: undefined };
+
+// Fires the "lock screen" push-notification banner when a genuinely new
+// notification lands at the top of a track's stack — not on every render
+// (which happens on every Firebase sync tick) and not for whatever was
+// already sitting there the first time this device sees any state at all.
+function maybeFirePushBanner(track, el, notifs){
+  const top = notifs && notifs[0];
+  const key = top ? (top.time + '|' + top.title + '|' + top.body) : null;
+
+  if(lastBannerKey[track] === undefined){
+    lastBannerKey[track] = key;
+    return;
+  }
+  if(key && key !== lastBannerKey[track]){
+    lastBannerKey[track] = key;
+    el.innerHTML =
+      '<div class="push-banner-top">' +
+        '<span class="push-banner-icon">' + PUSH_ICON_SVG + '</span>' +
+        '<span class="push-banner-app">FallGuard</span>' +
+        '<span class="push-banner-time">now</span>' +
+      '</div>' +
+      '<div class="push-banner-title">' + top.title + '</div>' +
+      '<div class="push-banner-body">' + top.body + '</div>';
+    el.classList.add('show');
+    clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(() => el.classList.remove('show'), 5000);
+  } else {
+    lastBannerKey[track] = key;
+  }
+}
+
+function render(){
+  sharedState = ensureShape(sharedState);
+
+  // If someone hit Reset while we were inside the app, our registered
+  // name no longer exists anywhere — send this device back to the gate
+  // so it re-enters a first name instead of acting as a ghost identity.
+  // (Don't return early here — the pulse visual lives outside #appBody
+  // and still needs the class updates below to drop back to its calm
+  // default color instead of staying stuck on amber/brick.)
+  if(seenResetEpoch !== null && sharedState.resetEpoch !== seenResetEpoch && myRole){
+    clearRole('reset');
+  }
+  seenResetEpoch = sharedState.resetEpoch;
+
+  triggerBtn.disabled = !!sharedState.active;
+  statusBadge.classList.remove('amber', 'brick');
+  statusVisual.classList.remove('amber', 'brick');
+  if(sharedState.status.mode === 'amber'){ statusBadge.classList.add('amber'); statusVisual.classList.add('amber'); }
+  if(sharedState.status.mode === 'brick'){ statusBadge.classList.add('brick'); statusVisual.classList.add('brick'); }
+  statusText.textContent = sharedState.status.text;
+
+  renderStack(userNotifs, recipientFeedFor(myRole), myRole === 'recipient' || myRole === 'caretaker');
+  renderStack(contactNotifs, sharedState.notifs.contact, myRole === 'contact');
+
+  maybeFirePushBanner('user', pushBannerRecipient, recipientFeedFor(myRole));
+  maybeFirePushBanner('contact', pushBannerContact, sharedState.notifs.contact);
+
+  renderAccountCard('recipient', document.getElementById('acctRecipientName'), document.getElementById('acctRecipientAvatar'));
+  renderAccountCard('contact', document.getElementById('acctContactName'), document.getElementById('acctContactAvatar'));
+  renderAccountCard('caretaker', document.getElementById('acctCaretakerName'), document.getElementById('acctCaretakerAvatar'));
+  renderRoster();
+
+  phoneRecipientName.textContent = displayName('recipient') || 'Care recipient';
+  phoneContactName.textContent = displayName('contact') || 'Emergency contact';
+
+  const log = sharedState.log;
+  if(log.length){
+    logEmpty.style.display = 'none';
+    eventLog.innerHTML = log.map(e =>
+      '<li><span class="t">' + e.t + '</span><span>' + e.text + '</span></li>'
+    ).join('');
+  } else {
+    logEmpty.style.display = 'block';
+    eventLog.innerHTML = '';
+
+  }
+}
+
+// ---- Firebase real-time sync ----
+
+const connBanner = document.getElementById('connBanner');
+let stateRef = null;
+
+function showBanner(kind, text){
+  connBanner.className = 'conn-banner show ' + kind;
+  connBanner.textContent = text;
+}
+
+function hideBanner(){
+  connBanner.className = 'conn-banner';
+}
+
+function isConfigured(){
+  return firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf('PASTE_') !== 0
+    && firebaseConfig.databaseURL && firebaseConfig.databaseURL.indexOf('YOUR_PROJECT') === -1;
+}
+
+function initFirebase(){
+  if(!isConfigured()){
+    showBanner('warn', "Firebase isn't configured yet — paste your config at the top of the script to turn on live sync. Running local-only for now.");
+    render();
+    return;
+  }
+  if(typeof firebase === 'undefined'){
+    console.error('FallGuard: Firebase SDK scripts never loaded');
+    showBanner('warn', "The Firebase SDK didn't load (network/CDN blocked?) — running local-only for now.");
+    render();
+    return;
+  }
+  try{
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    stateRef = db.ref(STATE_PATH);
+
+    db.ref('.info/connected').on('value', snap => {
+      if(snap.val() === true){
+        fbReady = true;
+        hideBanner();
+      } else {
+        showBanner('pending', 'Connecting to live sync…');
+      }
+    });
+
+    stateRef.on('value', snap => {
+      sharedState = ensureShape(snap.val());
+      render();
+    }, err => {
+      console.error('FallGuard: Firebase read failed', err);
+      showBanner('warn', 'Live sync error — check your Firebase database rules (test mode may have expired).');
+    });
+
+    // Listen for the real accelerometer/Raspberry Pi sensor. It just writes
+    // a timestamp here; the first value we see on load is the *old* trigger
+    // from a previous fall, so we ignore that one and only react to values
+    // that change after we're already listening.
+    let sawFirstTrigger = false;
+    let lastTriggerTs = null;
+    db.ref(TRIGGER_PATH).on('value', snap => {
+      const val = snap.val();
+      if(!val || !val.ts) return;
+      if(!sawFirstTrigger){
+        sawFirstTrigger = true;
+        lastTriggerTs = val.ts;
+        return;
+      }
+      if(val.ts !== lastTriggerTs){
+        lastTriggerTs = val.ts;
+        startFallSequence();
+      }
+    });
+  }catch(e){
+    console.error('FallGuard: Firebase init failed', e);
+    showBanner('warn', 'Firebase config looks invalid — double check what you pasted at the top of the script.');
+    render();
+  }
+}
+
+// Runs a mutator against the live shared state. `mutator(s)` should mutate
+// `s` in place and return true if it made a change, or false to abort
+// (e.g. a button that's already been acted on). Using a transaction means
+// if two devices act at almost the same instant, Firebase re-runs the
+// loser with the winner's fresh data instead of silently overwriting it.
+function runTransaction(mutator){
+  if(!fbReady || !stateRef){
+    // No live sync available — just mutate the local copy so the demo
+    // still works standalone.
+    const s = ensureShape(sharedState);
+    const changed = mutator(s);
+    if(changed) render();
+    return;
+  }
+  stateRef.transaction(current => {
+    const s = ensureShape(current);
+    const changed = mutator(s);
+    return changed ? s : undefined;
+  }, err => {
+    if(err) console.error('FallGuard: transaction failed', err);
+  });
+}
+
+function maybeAdvanceLocal(){
+  runTransaction(s => {
+    if(!s.active) return false;
+    const now = Date.now();
+    let changed = false;
+    if(!s.user.resolved && s.user.stage > 0 && s.user.stage < 3 && s.userNextAt && now >= s.userNextAt){
+      advanceUserStageOn(s);
+      changed = true;
+    }
+    if(!s.contact.resolved && s.contact.stage > 0 && s.contact.stage < 3 && s.contactNextAt && now >= s.contactNextAt){
+      advanceContactStageOn(s);
+      changed = true;
+    }
+    if(changed) finalizeIfDoneOn(s);
+    return changed;
+  });
+}
+
+function init(){
+  render();
+  initFirebase();
+  setInterval(maybeAdvanceLocal, 1000);
+}
+
+init();
+</script>
+</body>
+</html>
